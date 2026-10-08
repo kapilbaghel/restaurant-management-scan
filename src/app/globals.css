@@ -1,26 +1,315 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@custom-variant dark (&:is(.dark *));
+
+/* =========================================================
+   PREMIUM RESTAURANT SaaS — DESIGN SYSTEM
+   ========================================================= */
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  /* Typography */
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* Core Colors */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  --color-destructive: var(--destructive);
+
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Premium Brand Colors */
+  --color-brand-espresso: var(--brand-espresso);
+  --color-brand-espresso-light: var(--brand-espresso-light);
+
+  --color-brand-gold: var(--brand-gold);
+  --color-brand-gold-light: var(--brand-gold-light);
+
+  --color-brand-ivory: var(--brand-ivory);
+  --color-brand-beige: var(--brand-beige);
+
+  --color-brand-green: var(--brand-green);
+  --color-brand-green-light: var(--brand-green-light);
+
+  /* Status Colors */
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-info: var(--info);
+
+  /* Charts */
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  /* Sidebar */
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Radius */
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* =========================================================
+   LIGHT THEME
+   ========================================================= */
+
+:root {
+  /* Base */
+  --background: #f7f4ee;
+  --foreground: #171310;
+
+  /* Surfaces */
+  --card: #ffffff;
+  --card-foreground: #171310;
+
+  --popover: #ffffff;
+  --popover-foreground: #171310;
+
+  /* Primary */
+  --primary: #171310;
+  --primary-foreground: #ffffff;
+
+  /* Secondary */
+  --secondary: #efeae1;
+  --secondary-foreground: #29211c;
+
+  /* Muted */
+  --muted: #efeae1;
+  --muted-foreground: #716b63;
+
+  /* Accent */
+  --accent: #f1eadc;
+  --accent-foreground: #171310;
+
+  /* System */
+  --destructive: #b42318;
+  --border: #ded8ce;
+  --input: #ded8ce;
+  --ring: #c8a96b;
+
+  /* =======================================================
+     BRAND
+     ======================================================= */
+
+  --brand-espresso: #171310;
+  --brand-espresso-light: #29211c;
+
+  --brand-gold: #c8a96b;
+  --brand-gold-light: #e4d2a8;
+
+  --brand-ivory: #f7f4ee;
+  --brand-beige: #efeae1;
+
+  --brand-green: #176044;
+  --brand-green-light: #e5f0eb;
+
+  /* =======================================================
+     STATUS
+     ======================================================= */
+
+  --success: #176044;
+  --warning: #b7791f;
+  --danger: #b42318;
+  --info: #2563eb;
+
+  /* =======================================================
+     CHART COLORS
+     ======================================================= */
+
+  --chart-1: #176044;
+  --chart-2: #c8a96b;
+  --chart-3: #171310;
+  --chart-4: #716b63;
+  --chart-5: #e4d2a8;
+
+  /* =======================================================
+     SIDEBAR
+     ======================================================= */
+
+  --sidebar: #171310;
+  --sidebar-foreground: #f7f4ee;
+
+  --sidebar-primary: #c8a96b;
+  --sidebar-primary-foreground: #171310;
+
+  --sidebar-accent: #29211c;
+  --sidebar-accent-foreground: #ffffff;
+
+  --sidebar-border: #3a332d;
+  --sidebar-ring: #c8a96b;
+
+  /* =======================================================
+     GLOBAL RADIUS
+     ======================================================= */
+
+  --radius: 0.75rem;
+
+  /* =======================================================
+     CUSTOM SHADOWS
+     ======================================================= */
+
+  --shadow-premium:
+    0 1px 2px rgba(23, 19, 16, 0.04),
+    0 8px 24px rgba(23, 19, 16, 0.06);
+
+  --shadow-premium-lg:
+    0 4px 12px rgba(23, 19, 16, 0.06),
+    0 20px 45px rgba(23, 19, 16, 0.08);
+}
+
+/* =========================================================
+   DARK THEME
+   ========================================================= */
+
+.dark {
+  --background: #171310;
+  --foreground: #f7f4ee;
+
+  --card: #211c18;
+  --card-foreground: #f7f4ee;
+
+  --popover: #211c18;
+  --popover-foreground: #f7f4ee;
+
+  --primary: #e4d2a8;
+  --primary-foreground: #171310;
+
+  --secondary: #29211c;
+  --secondary-foreground: #f7f4ee;
+
+  --muted: #29211c;
+  --muted-foreground: #b5aea5;
+
+  --accent: #302820;
+  --accent-foreground: #f7f4ee;
+
+  --destructive: #d95c52;
+
+  --border: rgba(247, 244, 238, 0.12);
+  --input: rgba(247, 244, 238, 0.14);
+  --ring: #c8a96b;
+
+  --brand-espresso: #f7f4ee;
+  --brand-espresso-light: #ffffff;
+
+  --brand-gold: #c8a96b;
+  --brand-gold-light: #e4d2a8;
+
+  --brand-ivory: #171310;
+  --brand-beige: #29211c;
+
+  --brand-green: #4fa77e;
+  --brand-green-light: #18392c;
+
+  --success: #4fa77e;
+  --warning: #d49a3a;
+  --danger: #d95c52;
+  --info: #5b8def;
+
+  --chart-1: #4fa77e;
+  --chart-2: #c8a96b;
+  --chart-3: #e4d2a8;
+  --chart-4: #716b63;
+  --chart-5: #f7f4ee;
+
+  --sidebar: #0f0d0b;
+  --sidebar-foreground: #f7f4ee;
+
+  --sidebar-primary: #c8a96b;
+  --sidebar-primary-foreground: #171310;
+
+  --sidebar-accent: #29211c;
+  --sidebar-accent-foreground: #ffffff;
+
+  --sidebar-border: rgba(247, 244, 238, 0.1);
+  --sidebar-ring: #c8a96b;
+}
+
+/* =========================================================
+   BASE
+   ========================================================= */
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    @apply font-sans;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-geist-sans), sans-serif;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+  }
+
+  ::selection {
+    background: var(--brand-gold-light);
+    color: var(--brand-espresso);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* =========================================================
+   PREMIUM UTILITY CLASSES
+   ========================================================= */
+
+@layer utilities {
+  .shadow-premium {
+    box-shadow: var(--shadow-premium);
+  }
+
+  .shadow-premium-lg {
+    box-shadow: var(--shadow-premium-lg);
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
 }
