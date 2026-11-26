@@ -8,6 +8,7 @@ export default function ManagerDetails() {
   const params = useParams();
 
   const [manager, setManager] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 const [showAadhaar, setShowAadhaar] = useState(false);
 const [aadhaarUrl, setAadhaarUrl] = useState("");
 
@@ -21,21 +22,33 @@ const [showExperienceLetter, setShowExperienceLetter] = useState(false);
 const [experienceLetterUrl, setExperienceLetterUrl] = useState("");
 
 
-  useEffect(() => {
-    const savedManagers = localStorage.getItem("managers");
+useEffect(() => {
+  const fetchManagerDetails = async () => {
+    try {
+      const response = await fetch(
+        `/api/owners/managers/${params.id}`
+      );
 
-    if (savedManagers) {
-      const managers = JSON.parse(savedManagers);
+      const data = await response.json();
 
-const foundManager = managers.find(
-  (manager) => manager.id === Number(params.id)
-);
-
-console.log("AADHAAR DATA:", foundManager?.aadhaar);
-
-setManager(foundManager);
+      if (data.success) {
+        setManager(data.manager);
+      } else {
+        console.error(data.message);
+        setManager(null);
+      }
+    } catch (error) {
+      console.error("Fetch Manager Details Error:", error);
+      setManager(null);
+    } finally {
+      setIsLoading(false);
     }
-  }, [params.id]);
+  };
+
+  if (params.id) {
+    fetchManagerDetails();
+  }
+}, [params.id]);
 
 
 
@@ -292,6 +305,17 @@ const handleRemoveAadhaar = (index) => {
               {manager.name || "Not provided"}
             </p>
           </div>
+
+          {/* Manager ID */}
+<div>
+  <p className="text-sm text-muted-foreground">
+    Manager ID
+  </p>
+
+  <p className="mt-1 font-semibold text-brand-gold">
+    {manager.managerCode || "Not Generated"}
+  </p>
+</div>
 
           {/* Phone */}
           <div>

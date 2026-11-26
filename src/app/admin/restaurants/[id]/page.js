@@ -123,11 +123,21 @@ export default function RestaurantDetails({ params }) {
         <div className="mt-6 sm:mt-8 overflow-hidden rounded-xl border bg-card shadow-premium">
 
           {/* IMAGE */}
-          <img
-            src={restaurant.image}
-            alt={restaurant.name}
-            className="h-48 sm:h-64 lg:h-80 w-full object-cover"
-          />
+
+<img
+  src={
+    restaurant.image ||
+    "/restaurants/the-traditional-taste/hero.jpg"
+  }
+  alt={restaurant.name || "Restaurant"}
+  onError={(e) => {
+    e.currentTarget.onerror = null;
+    e.currentTarget.src =
+      "/restaurants/the-traditional-taste/hero.jpg";
+  }}
+  className="h-48 w-full object-cover sm:h-64 lg:h-80"
+/>
+
 
           {/* CONTENT */}
           <div className="p-4 sm:p-6">

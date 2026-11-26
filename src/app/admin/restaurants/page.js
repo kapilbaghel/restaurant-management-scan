@@ -44,8 +44,8 @@ const indiaStates = State.getStatesOfCountry("IN");
   ownerName: "",
   ownerPhone: "",
   ownerEmail: "",
-  // ownerPassword: "",
-  // ownerConfirmPassword: "",
+  ownerPassword: "",
+  ownerConfirmPassword: "",
   ownerAddress: "",
   ownerCity: "",
   ownerState: "",
@@ -66,7 +66,7 @@ const validateEmail = (email) => {
     return "";
   }
 
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
   if (!emailRegex.test(email)) {
     return "Invalid email ID — please enter a valid email with a domain.";
@@ -90,14 +90,22 @@ const convertFileToBase64 = (file) => {
 
 
 const handleCreateRestaurant = async () => {
+
+
+  
   // =========================
-  // EDIT RESTAURANT
+  // EDIT RESTAURANT IN MONGODB
   // =========================
   if (editingRestaurantId) {
-    const updatedRestaurants = restaurantList.map((restaurant) =>
-      restaurant.id === editingRestaurantId
-        ? {
-            ...restaurant,
+    try {
+      const response = await fetch("/api/admin/restaurants", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          restaurantId: editingRestaurantId,
+          restaurant: {
             name: restaurantForm.name,
             gstNumber: restaurantForm.gstNumber,
             phone: restaurantForm.phone,
@@ -107,24 +115,49 @@ const handleCreateRestaurant = async () => {
             state: restaurantForm.state,
             pincode: restaurantForm.pincode,
             status: restaurantForm.status,
-          }
-        : restaurant
-    );
+          },
+        }),
+      });
 
-    setRestaurantList(updatedRestaurants);
+      const result = await response.json();
 
-    localStorage.setItem(
-      "restaurants",
-      JSON.stringify(updatedRestaurants)
-    );
+      if (!response.ok || !result.success) {
+        alert(result.message || "Unable to update restaurant.");
+        return;
+      }
 
+      setRestaurantList((current) =>
+        current.map((restaurant) =>
+          String(restaurant.id) === String(editingRestaurantId)
+            ? {
+                ...restaurant,
+                name: restaurantForm.name,
+                gstNumber: restaurantForm.gstNumber,
+                phone: restaurantForm.phone,
+                email: restaurantForm.email,
+                address: restaurantForm.address,
+                city: restaurantForm.city,
+                state: restaurantForm.state,
+                pincode: restaurantForm.pincode,
+                status: restaurantForm.status,
+              }
+            : restaurant
+        )
+      );
 
+      alert("Restaurant updated successfully!");
 
-    setIsModalOpen(false);
-    setEditingRestaurantId(null);
+      setIsModalOpen(false);
+      setEditingRestaurantId(null);
+
+    } catch (error) {
+      console.error("Update restaurant error:", error);
+      alert("Something went wrong while updating restaurant.");
+    }
 
     return;
   }
+
 
   // =========================
   // REQUIRED FIELD VALIDATION
@@ -198,99 +231,59 @@ if (ownerEmailValidationError) {
   //   return;
   // }
 
-  // =========================
-  // CREATE OWNER
-  // =========================
-  const savedOwners = localStorage.getItem("owners");
 
-  const currentOwners = savedOwners
-    ? JSON.parse(savedOwners)
-    : [];
-
-
-const panDocument = restaurantForm.ownerPanDocument
-  ? await convertFileToBase64(restaurantForm.ownerPanDocument)
-  : null;
-
-const aadhaarDocument = restaurantForm.ownerAadhaarDocument
-  ? await convertFileToBase64(restaurantForm.ownerAadhaarDocument)
-  : null;
-
-
-const newOwner = {
-  id: Date.now(),
-
-  name: restaurantForm.ownerName,
-  phone: restaurantForm.ownerPhone,
-  email: restaurantForm.ownerEmail,
-
-  // password: restaurantForm.ownerPassword,
-
-  address: restaurantForm.ownerAddress,
-  city: restaurantForm.ownerCity,
-  state: restaurantForm.ownerState,
-  pincode: restaurantForm.ownerPincode,
-
-  pan: restaurantForm.ownerPan,
-  aadhaar: restaurantForm.ownerAadhaar,
-
-  panDocument: panDocument,
-  aadhaarDocument: aadhaarDocument,
-
-  status: "Active",
-};
-  const updatedOwners = [
-    ...currentOwners,
-    newOwner,
-  ];
-
-  localStorage.setItem(
-    "owners",
-    JSON.stringify(updatedOwners)
-  );
-
-  // =========================
-  // CREATE RESTAURANT
-  // =========================
-  const newRestaurant = {
-    id: Date.now() + 1,
-
-    name: restaurantForm.name,
-    gstNumber: restaurantForm.gstNumber,
-
-    phone: restaurantForm.phone,
-    email: restaurantForm.email,
-
-    address: restaurantForm.address,
-    city: restaurantForm.city,
-    state: restaurantForm.state,
-    pincode: restaurantForm.pincode,
-
-    status: restaurantForm.status,
-
-     ownerId: newOwner.id,
-  managerId: restaurantForm.managerId,
-
-  branchType: "main",
-  parentRestaurantId: null,
-   
-  };
-
-  const updatedRestaurants = [
-    ...restaurantList,
-    newRestaurant,
-  ];
-
-  setRestaurantList(updatedRestaurants);
-
-  localStorage.setItem(
-    "restaurants",
-    JSON.stringify(updatedRestaurants)
-  );
-
-  // SEND OWNER INVITATION EMAIL
+// =========================
+// CREATE RESTAURANT IN MONGODB
 // =========================
 try {
+  const panDocument = restaurantForm.ownerPanDocument
+    ? await convertFileToBase64(restaurantForm.ownerPanDocument)
+    : "";
+
+  const aadhaarDocument = restaurantForm.ownerAadhaarDocument
+    ? await convertFileToBase64(restaurantForm.ownerAadhaarDocument)
+    : "";
+
+  const createResponse = await fetch("/api/admin/restaurants", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      owner: {
+        name: restaurantForm.ownerName,
+        phone: restaurantForm.ownerPhone,
+        email: restaurantForm.ownerEmail,
+        address: restaurantForm.ownerAddress,
+        city: restaurantForm.ownerCity,
+        state: restaurantForm.ownerState,
+        pincode: restaurantForm.ownerPincode,
+        pan: restaurantForm.ownerPan,
+        aadhaar: restaurantForm.ownerAadhaar,
+        panDocument,
+        aadhaarDocument,
+      },
+      restaurant: {
+        name: restaurantForm.name,
+        gstNumber: restaurantForm.gstNumber,
+        phone: restaurantForm.phone,
+        email: restaurantForm.email,
+        address: restaurantForm.address,
+        city: restaurantForm.city,
+        state: restaurantForm.state,
+        pincode: restaurantForm.pincode,
+        status: restaurantForm.status,
+      },
+    }),
+  });
+
+  const createResult = await createResponse.json();
+
+  if (!createResponse.ok || !createResult.success) {
+    alert(createResult.message || "Unable to create restaurant.");
+    return;
+  }
+
   const emailResponse = await fetch("/api/send-owner-invite", {
     method: "POST",
     headers: {
@@ -305,81 +298,120 @@ try {
 
   const emailResult = await emailResponse.json();
 
-  if (!emailResult.success) {
-
-console.error(
-  "Owner email failed:",
-  JSON.stringify(emailResult, null, 2)
-);
-
+  if (!emailResponse.ok || !emailResult.success) {
+    alert("Restaurant created, but invitation email could not be sent.");
+    console.error("Invitation error:", emailResult);
   } else {
-    console.log("Owner invitation email sent successfully");
+    alert("Restaurant created and invitation email sent successfully!");
   }
+
+  setIsModalOpen(false);
+  setEditingRestaurantId(null);
+
+  setRestaurantForm({
+    name: "",
+    gstNumber: "",
+    phone: "",
+    email: "",
+    address: "",
+    city: "",
+    state: "",
+    pincode: "",
+    status: "Active",
+    ownerName: "",
+    ownerPhone: "",
+    ownerEmail: "",
+    ownerPassword: "",
+    ownerConfirmPassword: "",
+    ownerAddress: "",
+    ownerCity: "",
+    ownerState: "",
+    ownerPincode: "",
+    ownerPan: "",
+    ownerAadhaar: "",
+    ownerPanDocument: null,
+    ownerAadhaarDocument: null,
+    ownerId: "",
+  });
+
 } catch (error) {
-  console.error("Owner email error:", error);
+  console.error("Restaurant creation error:", error);
+  alert("Something went wrong while creating the restaurant.");
 }
 
-// =========================
-// CLOSE MODAL
-// =========================
-setIsModalOpen(false);
-setEditingRestaurantId(null);
+};
 
-// =========================
-// RESET FORM
-// =========================
-setRestaurantForm({
-  name: "",
-  gstNumber: "",
-  phone: "",
-  email: "",
-  address: "",
-  city: "",
-  state: "",
-  pincode: "",
-  status: "Active",
 
-  ownerName: "",
-  ownerPhone: "",
-  ownerEmail: "",
-  // ownerPassword: "",
-  // ownerConfirmPassword: "",
-  ownerAddress: "",
-  ownerCity: "",
-  ownerState: "",
-  ownerPincode: "",
-  ownerPan: "",
-  ownerAadhaar: "",
+const handleResendInvitation = async (restaurant) => {
+  const restaurantOwner = ownerList.find(
+    (owner) =>
+      String(owner.id) === String(restaurant.ownerId)
+  );
 
-  ownerPanDocument: null,
-  ownerAadhaarDocument: null,
+  if (!restaurantOwner) {
+    alert("Owner account not found.");
+    return;
+  }
 
-  ownerId: "",
+  if (!restaurantOwner.email) {
+    alert("Owner email not found.");
+    return;
+  }
 
-});
+  try {
+    const emailResponse = await fetch(
+      "/api/send-owner-invite",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ownerName: restaurantOwner.name,
+          ownerEmail: restaurantOwner.email,
+          restaurantName: restaurant.name,
+        }),
+      }
+    );
 
-// setShowOwnerPassword(false);
-// setShowOwnerConfirmPassword(false);
+    const emailResult = await emailResponse.json();
 
-console.log("Owner and Restaurant saved successfully");
+    if (!emailResult.success) {
+      console.error("Resend invitation failed:", emailResult);
+      alert("Invitation email could not be sent.");
+      return;
+    }
+
+    alert("Owner invitation email sent successfully.");
+  } catch (error) {
+    console.error("Resend invitation error:", error);
+    alert("Something went wrong while sending the invitation.");
+  }
 };
 
 
 useEffect(() => {
-  const savedRestaurants = localStorage.getItem("restaurants");
+  const fetchRestaurants = async () => {
+    try {
+      const response = await fetch("/api/admin/restaurants");
+      const result = await response.json();
 
-  if (savedRestaurants) {
-    setRestaurantList(JSON.parse(savedRestaurants));
-  }
+      if (!response.ok || !result.success) {
+        console.error("Failed to fetch restaurants:", result.message);
+        return;
+      }
 
-  const savedOwners = localStorage.getItem("owners");
+      setRestaurantList(result.restaurants || []);
+      setOwnerList(result.owners || []);
 
-  if (savedOwners) {
-    setOwnerList(JSON.parse(savedOwners));
-  }
+    } catch (error) {
+      console.error("Fetch restaurants error:", error);
+    }
+  };
 
-
+  fetchRestaurants();
 }, []);
+
 
     useEffect(() => {
   const handleClickOutside = () => {
@@ -394,6 +426,13 @@ useEffect(() => {
     document.removeEventListener("click", handleClickOutside);
   };
 }, [openMenuId]);
+
+const mainRestaurants = restaurantList.filter(
+  (restaurant) =>
+    (restaurant.branchType === "main" ||
+      !restaurant.branchType) &&
+    !restaurant.parentRestaurantId
+);
 
   return (
     <div className="flex min-h-screen">
@@ -473,7 +512,7 @@ useEffect(() => {
 
     <div className="mt-3 flex items-end justify-between">
       <h2 className="text-3xl font-bold text-[#171411]">
-        {restaurantList.length}
+        {mainRestaurants.length}
       </h2>
 
       <div className="rounded-xl bg-[#F5E8D4] px-3 py-2 text-xs font-semibold text-[#A87535]">
@@ -490,11 +529,11 @@ useEffect(() => {
 
     <div className="mt-3 flex items-end justify-between">
       <h2 className="text-3xl font-bold text-[#171411]">
-        {
-          restaurantList.filter(
-            (restaurant) => restaurant.status === "Active"
-          ).length
-        }
+       {
+  mainRestaurants.filter(
+    (restaurant) => restaurant.status === "Active"
+  ).length
+}
       </h2>
 
       <div className="rounded-xl bg-[#E8F2EB] px-3 py-2 text-xs font-semibold text-[#3F7D5A]">
@@ -546,7 +585,7 @@ useEffect(() => {
     </div>
 
     <span className="text-sm text-[#716B64]">
-      {restaurantList.length} restaurants
+     {mainRestaurants.length} restaurants
     </span>
 
   </div>
@@ -590,19 +629,17 @@ useEffect(() => {
 
       <tbody>
 
-      {restaurantList
-  .filter(
-    (restaurant) =>
-      restaurant.branchType === "main" ||
-      !restaurant.branchType
-  )
-  .map((restaurant, index) => {
-
+{mainRestaurants.map((restaurant, index) => {
+  
           const restaurantOwner = ownerList.find(
             (owner) =>
               String(owner.id) ===
               String(restaurant.ownerId)
           );
+
+
+
+
 
           return (
             <tr
@@ -632,9 +669,9 @@ useEffect(() => {
                       {restaurant.name}
                     </p>
 
-                    <p className="mt-1 text-xs text-[#9A9289]">
-                      Restaurant ID: {restaurant.id}
-                    </p>
+                 <p className="mt-1 text-xs text-[#9A9289]">
+  Restaurant ID: {restaurant.restaurantCode || "Not Assigned"}
+</p>
                   </div>
 
                 </div>
@@ -668,6 +705,12 @@ useEffect(() => {
                     {restaurantOwner.email}
                   </p>
                 )}
+
+                {restaurantOwner?.ownerCode && (
+  <p className="mt-1 text-xs text-[#9A9289]">
+    Owner ID: {restaurantOwner.ownerCode}
+  </p>
+)}
 
               </td>
 
@@ -800,6 +843,17 @@ useEffect(() => {
                           Delete
                         </button>
 
+                        <button
+  type="button"
+  onClick={() => {
+    handleResendInvitation(restaurant);
+    setOpenMenuId(null);
+  }}
+  className="w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-[#B88945] transition hover:bg-[#F5E8D4]"
+>
+  Resend Invitation
+</button>
+
                       </div>
                     )}
 
@@ -837,48 +891,48 @@ useEffect(() => {
       onClick={(event) => event.stopPropagation()}
     >
 
-      {/* ================= HEADER ================= */}
-      <div className="shrink-0 border-b border-[#E8E1D8] bg-white px-7 py-6">
-        <div className="flex items-start justify-between gap-5">
 
-          <div>
-            <div className="mb-2 flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-[#D5A960]" />
-              <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#B88945]">
-                Restaurant Management
-              </span>
-            </div>
-
-            <h2 className="text-2xl font-bold tracking-tight text-[#171411]">
-              {editingRestaurantId
-                ? "Edit Restaurant"
-                : "Add Restaurant"}
-            </h2>
-
-            <p className="mt-1.5 text-sm text-[#716B64]">
-              {editingRestaurantId
-                ? "Update restaurant information and account details."
-                : "Create a new restaurant and owner account."}
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => {
-              setIsModalOpen(false);
-              setEditingRestaurantId(null);
-            }}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#E5DED4] bg-white text-xl text-[#716B64] transition hover:border-[#D5A960] hover:bg-[#F7F4EE] hover:text-[#171411]"
-          >
-            ×
-          </button>
-
-        </div>
+{/* ================= HEADER ================= */}
+<div className="shrink-0 border-b border-white/10 bg-[#17392D] px-7 py-6">
+  <div className="flex items-start justify-between gap-5">
+    <div>
+      <div className="mb-2 flex items-center gap-2">
+        <span className="h-2 w-2 rounded-full bg-[#D6AD70]" />
+        <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#D6AD70]">
+          Restaurant Management
+        </span>
       </div>
+
+<h2 className="text-2xl font-bold tracking-tight text-white">
+  {editingRestaurantId ? "Edit Restaurant" : "Add Restaurant"}
+</h2>
+
+   <p className="mt-1.5 text-sm text-white/65">
+  {editingRestaurantId
+    ? "Update the restaurant details below."
+    : "Enter the basic details of your restaurant."}
+</p>
+    </div>
+
+    <button
+      type="button"
+    onClick={() => {
+  setIsModalOpen(false);
+  setEditingRestaurantId(null);
+}}
+      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/20 bg-white/5 text-xl text-white transition hover:border-[#D6AD70] hover:bg-[#D6AD70] hover:text-[#17392D]"
+    >
+      ×
+    </button>
+  </div>
+</div>
+
 
 
       {/* ================= SCROLLABLE FORM ================= */}
-      <div className="min-h-0 flex-1 overflow-y-auto">
+      
+<div className="min-h-0 flex-1 overflow-y-auto bg-[#F7F4EE]">
+
         <div className="space-y-8 px-7 py-7">
 
           {/* ================================================= */}
@@ -888,18 +942,24 @@ useEffect(() => {
           <section>
 
             <div className="mb-5 flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#F5E8D4] text-sm font-bold text-[#B88945]">
-                01
-              </div>
+
+<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#D6AD70]/25 text-sm font-bold text-[#A87936]">
+  01
+</div>
+
 
               <div>
-                <h3 className="text-lg font-bold text-[#171411]">
-                  Restaurant Information
-                </h3>
+              
+<h3 className="text-lg font-bold text-[#17392D]">
+  Restaurant Information
+</h3>
 
-                <p className="mt-1 text-sm text-[#716B64]">
-                  Enter the basic details of the restaurant.
-                </p>
+
+              
+<p className="mt-1 text-sm text-[#716B64]">
+  Enter the basic details of the restaurant.
+</p>
+
               </div>
             </div>
 
@@ -923,7 +983,9 @@ useEffect(() => {
                       name: e.target.value,
                     })
                   }
-                  className="mt-2 h-12 w-full rounded-xl border border-[#DED5CA] bg-white px-4 text-sm text-[#171411] outline-none transition placeholder:text-[#AAA29A] focus:border-[#D5A960] focus:ring-4 focus:ring-[#D5A960]/10"
+             
+className="mt-2 h-12 w-full rounded-xl border border-[#E6D9C9] bg-[#FFFEFC] px-4 text-sm text-[#17392D] outline-none transition placeholder:text-[#AAA29A] focus:border-[#D6AD70] focus:ring-4 focus:ring-[#D6AD70]/15"
+
                 />
               </div>
 
@@ -945,7 +1007,7 @@ useEffect(() => {
                       gstNumber: e.target.value,
                     })
                   }
-                  className="mt-2 h-12 w-full rounded-xl border border-[#DED5CA] bg-white px-4 text-sm uppercase text-[#171411] outline-none transition placeholder:text-[#AAA29A] focus:border-[#D5A960] focus:ring-4 focus:ring-[#D5A960]/10"
+          className="mt-2 h-12 w-full rounded-xl border border-[#E6D9C9] bg-[#FFFEFC] px-4 text-sm text-[#17392D] outline-none transition placeholder:text-[#AAA29A] focus:border-[#D6AD70] focus:ring-4 focus:ring-[#D6AD70]/15"
                 />
               </div>
 
@@ -1071,7 +1133,7 @@ useEffect(() => {
 
               setRestaurantCitySearch("");
             }}
-            className="block w-full px-4 py-3 text-left hover:bg-[#F5E8D4]"
+           className="block w-full px-4 py-3 text-left text-sm text-[#17392D] transition hover:bg-[#F7F4EE]"
           >
             {city.name}
           </button>
@@ -1126,7 +1188,7 @@ useEffect(() => {
 
               setRestaurantStateSearch("");
             }}
-            className="block w-full px-4 py-3 text-left text-sm hover:bg-[#F5E8D4]"
+         className="block w-full px-4 py-3 text-left text-sm text-[#17392D] transition hover:bg-[#F7F4EE]"
           >
             {state.name}
           </button>
@@ -1191,17 +1253,17 @@ useEffect(() => {
           {/* OWNER INFORMATION */}
           {/* ================================================= */}
 
-          <section className="border-t border-[#E8E1D8] pt-8">
+       <section className="border-t border-[#E6D9C9] pt-8">
 
             <div className="mb-5 flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#F5E8D4] text-sm font-bold text-[#B88945]">
-                02
-              </div>
+             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#D6AD70]/25 text-sm font-bold text-[#A87936]">
+  02
+</div>
 
               <div>
-                <h3 className="text-lg font-bold text-[#171411]">
-                  Owner Information
-                </h3>
+               <h3 className="text-lg font-bold text-[#17392D]">
+  Owner Information
+</h3>
 
                 <p className="mt-1 text-sm text-[#716B64]">
                   Enter the owner&apos;s personal and contact details.
@@ -1229,7 +1291,7 @@ useEffect(() => {
                       ownerName: e.target.value,
                     })
                   }
-                  className="mt-2 h-12 w-full rounded-xl border border-[#DED5CA] bg-white px-4 text-sm text-[#171411] outline-none transition placeholder:text-[#AAA29A] focus:border-[#D5A960] focus:ring-4 focus:ring-[#D5A960]/10"
+                 className="mt-2 h-12 w-full rounded-xl border border-[#E6D9C9] bg-[#FFFEFC] px-4 text-sm text-[#17392D] outline-none transition placeholder:text-[#AAA29A] focus:border-[#D6AD70] focus:ring-4 focus:ring-[#D6AD70]/15"
                 />
               </div>
 
@@ -1334,11 +1396,11 @@ useEffect(() => {
         ownerCity: "",
       });
     }}
-    className="mt-2 h-12 w-full rounded-lg border bg-background px-4 outline-none focus:ring-2 focus:ring-brand-gold"
+    className="mt-2 h-12 w-full rounded-xl border border-[#E6D9C9] bg-[#FFFEFC] px-4 text-sm text-[#17392D] outline-none transition placeholder:text-[#AAA29A] focus:border-[#D6AD70] focus:ring-4 focus:ring-[#D6AD70]/15"
   />
 
   {ownerCitySearch && (
-    <div className="absolute z-50 mt-1 max-h-60 w-full overflow-y-auto rounded-lg border bg-white shadow-lg">
+    <div className="absolute z-50 mt-1 max-h-60 w-full overflow-y-auto rounded-xl border border-[#E6D9C9] bg-[#FFFEFC] shadow-lg">
       {indiaCities
         .filter((city) =>
           city.name
@@ -1358,7 +1420,7 @@ useEffect(() => {
 
               setOwnerCitySearch("");
             }}
-            className="block w-full px-4 py-3 text-left hover:bg-[#F5E8D4]"
+            className="block w-full px-4 py-3 text-left text-sm text-[#17392D] transition hover:bg-[#F7F4EE]"
           >
             {city.name}
           </button>
@@ -1476,7 +1538,7 @@ useEffect(() => {
 
               {/* PAN */}
               <div>
-                <label className="text-sm font-semibold text-[#3F3933]">
+                <label className="text-sm font-semibold text-[#17392D]">
                   Owner PAN
                   <span className="ml-1 text-[#C85C5C]">*</span>
                 </label>
@@ -1498,7 +1560,7 @@ useEffect(() => {
 
               {/* Aadhaar */}
               <div>
-                <label className="text-sm font-semibold text-[#3F3933]">
+                <label className="text-sm font-semibold text-[#17392D]">
                   Owner Aadhaar
                   <span className="ml-1 text-[#C85C5C]">*</span>
                 </label>
@@ -1513,18 +1575,18 @@ useEffect(() => {
                       ownerAadhaar: e.target.value,
                     })
                   }
-                  className="mt-2 h-12 w-full rounded-xl border border-[#DED5CA] bg-white px-4 text-sm text-[#171411] outline-none transition placeholder:text-[#AAA29A] focus:border-[#D5A960] focus:ring-4 focus:ring-[#D5A960]/10"
+                className="mt-2 h-12 w-full rounded-xl border border-[#E6D9C9] bg-[#FFFEFC] px-4 text-sm text-[#17392D] outline-none transition placeholder:text-[#AAA29A] focus:border-[#D6AD70] focus:ring-4 focus:ring-[#D6AD70]/15"
                 />
               </div>
 
 
               {/* PAN Document */}
               <div>
-                <label className="text-sm font-semibold text-[#3F3933]">
+                <label className="text-sm font-semibold text-[#17392D]">
                   PAN Document
                 </label>
 
-                <div className="mt-2 rounded-xl border border-dashed border-[#D8CFC4] bg-white p-4 transition hover:border-[#D5A960] hover:bg-[#FFFCF8]">
+                <div className="mt-2 rounded-xl border border-dashed border-[#D6AD70]/60 bg-[#FFFEFC] p-4 transition hover:border-[#D6AD70] hover:bg-[#F7F4EE]">
 
                   <input
                     type="file"
@@ -1536,7 +1598,7 @@ useEffect(() => {
                           e.target.files?.[0] || null,
                       })
                     }
-                    className="w-full text-sm text-[#716B64] file:mr-4 file:rounded-lg file:border-0 file:bg-[#F5E8D4] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-[#A87535] hover:file:bg-[#EEDDBF]"
+                className="w-full text-sm text-[#716B64] file:mr-4 file:cursor-pointer file:rounded-lg file:border-0 file:bg-[#D6AD70]/25 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-[#17392D] hover:file:bg-[#D6AD70]/40"
                   />
 
                   {restaurantForm.ownerPanDocument && (
@@ -1551,11 +1613,11 @@ useEffect(() => {
 
               {/* Aadhaar Document */}
               <div>
-                <label className="text-sm font-semibold text-[#3F3933]">
+                <label className="text-sm font-semibold text-[#17392D]">
                   Aadhaar Document
                 </label>
 
-                <div className="mt-2 rounded-xl border border-dashed border-[#D8CFC4] bg-white p-4 transition hover:border-[#D5A960] hover:bg-[#FFFCF8]">
+                <div className="mt-2 rounded-xl border border-dashed border-[#D6AD70]/60 bg-[#FFFEFC] p-4 transition hover:border-[#D6AD70] hover:bg-[#F7F4EE]">
 
                   <input
                     type="file"
@@ -1567,7 +1629,7 @@ useEffect(() => {
                           e.target.files?.[0] || null,
                       })
                     }
-                    className="w-full text-sm text-[#716B64] file:mr-4 file:rounded-lg file:border-0 file:bg-[#F5E8D4] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-[#A87535] hover:file:bg-[#EEDDBF]"
+                   className="w-full text-sm text-[#716B64] file:mr-4 file:cursor-pointer file:rounded-lg file:border-0 file:bg-[#D6AD70]/25 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-[#17392D] hover:file:bg-[#D6AD70]/40"
                   />
 
                   {restaurantForm.ownerAadhaarDocument && (
@@ -1623,7 +1685,7 @@ useEffect(() => {
                 setIsModalOpen(false);
                 setEditingRestaurantId(null);
               }}
-              className="rounded-xl border border-[#DED5CA] bg-white px-5 py-2.5 text-sm font-semibold text-[#4F4942] transition hover:bg-[#F7F4EE]"
+             className="rounded-xl border border-[#E6D9C9] bg-[#FFFEFC] px-5 py-2.5 text-sm font-semibold text-[#17392D] transition hover:border-[#D6AD70] hover:bg-[#F7F4EE]"
             >
               Cancel
             </button>
@@ -1631,7 +1693,7 @@ useEffect(() => {
             <button
               type="button"
               onClick={handleCreateRestaurant}
-              className="rounded-xl bg-[#D5A960] px-6 py-2.5 text-sm font-semibold text-[#171411] shadow-sm transition hover:bg-[#C99A52] hover:shadow-md"
+            className="rounded-xl bg-[#D6AD70] px-6 py-2.5 text-sm font-semibold text-[#17392D] shadow-sm transition hover:bg-[#C49A5E] hover:shadow-md"
             >
               {editingRestaurantId
                 ? "Update Restaurant"
@@ -1652,82 +1714,49 @@ useEffect(() => {
     onClick={() => setDeletingRestaurantId(null)}
   >
     <div
-      className="w-full max-w-md overflow-hidden rounded-3xl border border-[#E5DED4] bg-[#FDFCFA] shadow-[0_25px_80px_rgba(23,20,17,0.22)]"
+     className="w-full max-w-md overflow-hidden rounded-3xl border border-[#E6D9C9] bg-[#F7F4EE] shadow-[0_25px_80px_rgba(23,20,17,0.22)]"
       onClick={(event) => event.stopPropagation()}
     >
 
-      {/* ================= HEADER ================= */}
-      <div className="px-7 pt-7">
+      
+{/* ================= HEADER ================= */}
+<div className="shrink-0 border-b border-white/10 bg-[#17392D] px-7 py-6">
+  <div className="flex items-start justify-between gap-5">
 
-        <div className="flex items-start justify-between">
-
-          {/* DELETE ICON */}
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#FBEAEA]">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              className="h-6 w-6 text-[#C85C5C]"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M3 6h18"
-              />
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M8 6V4.5A1.5 1.5 0 0 1 9.5 3h5A1.5 1.5 0 0 1 16 4.5V6"
-              />
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M19 6l-1 14a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 6 20L5 6"
-              />
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M10 10v7M14 10v7"
-              />
-            </svg>
-          </div>
-
-
-          {/* CLOSE BUTTON */}
-          <button
-            type="button"
-            onClick={() => setDeletingRestaurantId(null)}
-            className="flex h-9 w-9 items-center justify-center rounded-xl text-xl text-[#9A9289] transition hover:bg-[#F7F4EE] hover:text-[#171411]"
-          >
-            ×
-          </button>
-
-        </div>
-
-
-        {/* TITLE */}
-        <div className="mt-6">
-
-          <h2 className="text-xl font-bold tracking-tight text-[#171411]">
-            Delete Restaurant?
-          </h2>
-
-          <p className="mt-2 text-sm leading-6 text-[#716B64]">
-            This action will permanently remove the restaurant
-            from your restaurant list.
-          </p>
-
-        </div>
-
+    <div>
+      <div className="mb-2 flex items-center gap-2">
+        <span className="h-2 w-2 rounded-full bg-[#D6AD70]" />
+        <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#D6AD70]">
+          Restaurant Management
+        </span>
       </div>
+
+<h2 className="text-2xl font-bold tracking-tight text-white">
+  Delete Restaurant
+</h2>
+
+ <p className="mt-1.5 text-sm text-white/65">
+  Review the restaurant details before confirming deletion.
+</p>
+    </div>
+
+    <button
+      type="button"
+onClick={() => setDeletingRestaurantId(null)}
+      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/20 bg-white/5 text-xl text-white transition hover:border-[#D6AD70] hover:bg-[#D6AD70] hover:text-[#17392D]"
+    >
+      ×
+    </button>
+
+  </div>
+</div>
+
 
 
       {/* ================= RESTAURANT ================= */}
       <div className="px-7 py-6">
 
-        <div className="rounded-2xl border border-[#E8E1D8] bg-white p-4">
+        <div className ="rounded-2xl border border-[#E6D9C9] bg-[#FFFEFC] p-4">
 
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#9A9289]">
             Restaurant
@@ -1736,7 +1765,7 @@ useEffect(() => {
           <div className="mt-3 flex items-center gap-3">
 
             {/* AVATAR */}
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#F5E8D4] text-sm font-bold text-[#B88945]">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#D6AD70]/25 text-sm font-bold text-[#A87936]">
               {restaurantList
                 .find(
                   (restaurant) =>
@@ -1749,7 +1778,7 @@ useEffect(() => {
 
             <div className="min-w-0">
 
-              <p className="truncate text-sm font-bold text-[#171411]">
+              <p className="truncate text-sm font-bold text-[#17392D]">
                 {
                   restaurantList.find(
                     (restaurant) =>
@@ -1814,42 +1843,65 @@ useEffect(() => {
 
 
       {/* ================= FOOTER ================= */}
-      <div className="flex items-center justify-end gap-3 border-t border-[#E8E1D8] bg-white px-7 py-4">
+      <div className="flex items-center justify-end gap-3 border-t border-[#E6D9C9] bg-[#FFFEFC] px-7 py-4">
 
         {/* CANCEL */}
         <button
           type="button"
           onClick={() => setDeletingRestaurantId(null)}
-          className="rounded-xl border border-[#DED5CA] bg-white px-5 py-2.5 text-sm font-semibold text-[#4F4942] transition hover:bg-[#F7F4EE]"
+         className="rounded-xl border border-[#E6D9C9] bg-[#FFFEFC] px-5 py-2.5 text-sm font-semibold text-[#17392D] transition hover:border-[#D6AD70] hover:bg-[#F7F4EE]"
         >
           Cancel
         </button>
 
 
         {/* DELETE */}
-        <button
-          type="button"
-          onClick={() => {
+       
+<button
+  type="button"
+  onClick={async () => {
+    try {
+      const response = await fetch("/api/admin/restaurants", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          restaurantId: deletingRestaurantId,
+        }),
+      });
 
-            const updatedRestaurants =
-              restaurantList.filter(
-                (restaurant) =>
-                  restaurant.id !== deletingRestaurantId
-              );
+      const data = await response.json();
 
-            setRestaurantList(updatedRestaurants);
+      if (!response.ok) {
+        alert(data.message || "Unable to delete restaurant.");
+        return;
+      }
 
-            localStorage.setItem(
-              "restaurants",
-              JSON.stringify(updatedRestaurants)
-            );
+      const updatedRestaurants = restaurantList.filter(
+        (restaurant) => restaurant.id !== deletingRestaurantId
+      );
 
-            setDeletingRestaurantId(null);
-          }}
-          className="rounded-xl bg-[#C85C5C] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#B94F4F] hover:shadow-md"
-        >
-          Delete Restaurant
-        </button>
+      setRestaurantList(updatedRestaurants);
+
+      localStorage.setItem(
+        "restaurants",
+        JSON.stringify(updatedRestaurants)
+      );
+
+      setDeletingRestaurantId(null);
+
+      alert("Restaurant deleted successfully.");
+    } catch (error) {
+      console.error("Delete restaurant error:", error);
+      alert("Something went wrong. Please try again.");
+    }
+  }}
+  className="rounded-xl bg-[#C85C5C] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#B94F4F] hover:shadow-md"
+>
+  Delete Restaurant
+</button>
+
 
       </div>
 

@@ -7,63 +7,78 @@ import { restaurants as initialRestaurants } from "@/data/restaurants";
 
 export default function OwnerDashboard() {
   const [owner, setOwner] = useState(null);
+  const [error, setError] = useState("");
   const [restaurantList, setRestaurantList] = useState(
     initialRestaurants
   );
   const [loading, setLoading] = useState(true);
   const [currentOwnerId, setCurrentOwnerId] = useState(null);
 
-  useEffect(() => {
-    // --------------------------------
-    // GET LOGGED-IN OWNER ID
-    // --------------------------------
 
-    const loggedInOwnerId =
-      localStorage.getItem("loggedInOwnerId");
 
-    if (!loggedInOwnerId) {
-      window.location.href = "/login";
-      return;
-    }
+useEffect(() => {
+  const fetchOwnerData = async () => {
+    try {
+      // Get logged-in Owner from secure session cookie
+      const response = await fetch("/api/owners/me", {
+        method: "GET",
+        credentials: "include",
+        cache: "no-store",
+      });
 
-    setCurrentOwnerId(loggedInOwnerId);
+      const data = await response.json();
 
-    // --------------------------------
-    // GET OWNER DATA
-    // --------------------------------
+      if (!response.ok || !data.success || !data.owner) {
+        window.location.href = "/login";
+        return;
+      }
 
-    const savedOwners = localStorage.getItem("owners");
+    const loggedInOwnerId = data.owner.id || data.owner._id;
 
-    if (savedOwners) {
-      const ownerList = JSON.parse(savedOwners);
+      setCurrentOwnerId(loggedInOwnerId);
+      setOwner(data.owner);
 
-      const loggedInOwner = ownerList.find(
-        (item) =>
-          String(item.id) === String(loggedInOwnerId)
+
+
+      // Get only logged-in Owner's restaurants
+      const restaurantResponse = await fetch(
+        "/api/owners/restaurants",
+        {
+          method: "GET",
+          credentials: "include",
+          cache: "no-store",
+        }
       );
 
-      if (loggedInOwner) {
-        setOwner(loggedInOwner);
+      const restaurantData = await restaurantResponse.json();
+
+      if (!restaurantResponse.ok || !restaurantData.success) {
+        throw new Error(
+          restaurantData.message || "Unable to fetch restaurants."
+        );
       }
+
+      setRestaurantList(restaurantData.restaurants || []);
+
+     
+
+    } catch (error) {
+      console.error("Owner dashboard error:", error);
+      setError("Unable to load owner details. Please try again.");
+    } finally {
+      setLoading(false);
     }
+  };
 
-    // --------------------------------
-    // GET RESTAURANTS
-    // --------------------------------
+  fetchOwnerData();
+}, []);
 
-    const savedRestaurants =
-      localStorage.getItem("restaurants");
 
-    if (savedRestaurants) {
-      setRestaurantList(JSON.parse(savedRestaurants));
-    }
-
-    setLoading(false);
-  }, []);
 
   // --------------------------------
   // FILTER OWNER RESTAURANTS
   // --------------------------------
+
 
 const ownerRestaurants = restaurantList.filter(
   (restaurant) =>
@@ -119,27 +134,29 @@ const ownerRestaurants = restaurantList.filter(
   }
 
 return (
-  <div className="min-h-screen bg-[#F7F4EE]">
+<div className="min-h-screen w-full max-w-full overflow-x-hidden bg-[#F4F0E9]">
 
     {/* SIDEBAR */}
     <OwnerSidebar />
 
     {/* MAIN CONTENT */}
-    <main className="ml-64 min-h-screen p-8">
+   
+<main className="min-h-screen w-full min-w-0 max-w-full overflow-x-hidden p-4 pt-20 sm:p-6 lg:ml-64 lg:w-auto lg:p-9">
+
 
       {/* ================= HEADER ================= */}
-      <div className="mb-8 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+      <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
 
         <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#B88945]">
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#B8792E]">
             Owner Dashboard
           </p>
 
-          <h1 className="mt-2 text-3xl font-bold tracking-tight text-[#171411]">
+          <h1 className="mt-2 text-3xl font-bold tracking-tight text-[#17231E] sm:text-4xl">
             Welcome, {owner.name}
           </h1>
 
-          <p className="mt-2 text-sm text-[#716B64]">
+          <p className="mt-2 text-sm leading-6 text-[#82796E]">
             Manage your restaurants and branches from one place.
           </p>
         </div>
@@ -150,7 +167,7 @@ return (
           onClick={() => {
             window.location.href = "/owner/restaurants";
           }}
-          className="inline-flex items-center justify-center rounded-xl bg-[#D5A960] px-5 py-3 text-sm font-semibold text-[#171411] shadow-sm transition hover:bg-[#C99A52] hover:shadow-md"
+          className="inline-flex items-center justify-center rounded-xl bg-[#D5A454] px-6 py-3 text-sm font-semibold text-[#17231E] shadow-[0_4px_12px_rgba(140,99,39,0.12)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#C89543] hover:shadow-lg"
         >
           <span className="mr-2 text-lg leading-none">+</span>
           Add Restaurant
@@ -160,47 +177,50 @@ return (
 
 
       {/* ================= STATS ================= */}
-      <div className="mb-8 grid gap-5 md:grid-cols-3">
+      <div className="mb-9 grid gap-5 md:grid-cols-3">
 
         {/* TOTAL */}
-        <div className="rounded-2xl border border-[#E5DED4] bg-white p-6 shadow-[0_8px_30px_rgba(23,20,17,0.04)]">
+        <div className="group relative overflow-hidden rounded-[22px] border border-[#E9DDCB] bg-[#FFFCF8] p-6 shadow-[0_8px_26px_rgba(80,62,38,0.04)] transition-all duration-300 hover:-translate-y-1 hover:border-[#D8BD91] hover:shadow-[0_14px_32px_rgba(80,62,38,0.08)]">
+          <div className="pointer-events-none absolute -right-1 -top-1 h-24 w-24 rounded-bl-[90px] bg-[#F8EFE2]" />
 
           <div className="flex items-start justify-between">
 
             <div>
-              <p className="text-sm font-medium text-[#716B64]">
+              <p className="text-sm font-semibold text-[#786B59]">
                 Total Restaurants
               </p>
 
-              <h2 className="mt-3 text-3xl font-bold text-[#171411]">
+              <h2 className="mt-3 text-3xl font-bold tracking-tight text-[#26352D]">
                 {ownerRestaurants.length}
               </h2>
             </div>
 
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#F5E8D4] text-sm font-bold text-[#B88945]">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-[#E8E0D5] bg-[#F4F0E9] text-sm font-bold text-[#B38E59]">
               R
             </div>
 
           </div>
 
-          <p className="mt-4 text-xs text-[#9A9289]">
+          <p className="mt-4 text-xs leading-5 text-[#8F806D]">
             Restaurants assigned to your account
           </p>
+          <div className="mt-5 h-1 w-full rounded-full bg-[#D5A454]" />
 
         </div>
 
 
         {/* ACTIVE */}
-        <div className="rounded-2xl border border-[#E5DED4] bg-white p-6 shadow-[0_8px_30px_rgba(23,20,17,0.04)]">
+        <div className="group relative overflow-hidden rounded-[22px] border border-[#E9DDCB] bg-[#FFFCF8] p-6 shadow-[0_8px_26px_rgba(80,62,38,0.04)] transition-all duration-300 hover:-translate-y-1 hover:border-[#D8BD91] hover:shadow-[0_14px_32px_rgba(80,62,38,0.08)]">
+          <div className="pointer-events-none absolute -right-1 -top-1 h-24 w-24 rounded-bl-[90px] bg-[#E8F1EA]" />
 
           <div className="flex items-start justify-between">
 
             <div>
-              <p className="text-sm font-medium text-[#716B64]">
+              <p className="text-sm font-semibold text-[#786B59]">
                 Active Restaurants
               </p>
 
-              <h2 className="mt-3 text-3xl font-bold text-[#171411]">
+              <h2 className="mt-3 text-3xl font-bold tracking-tight text-[#26352D]">
                 {
                   ownerRestaurants.filter(
                     (restaurant) =>
@@ -210,30 +230,32 @@ return (
               </h2>
             </div>
 
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#E8F2EB]">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-[#D4E3D5] bg-[#EAF2E9]">
               <span className="h-2.5 w-2.5 rounded-full bg-[#3F7D5A]" />
             </div>
 
           </div>
 
-          <p className="mt-4 text-xs text-[#9A9289]">
+          <p className="mt-4 text-xs leading-5 text-[#8F806D]">
             Currently operational
           </p>
+          <div className="mt-5 h-1 w-full rounded-full bg-[#287B55]" />
 
         </div>
 
 
         {/* INACTIVE */}
-        <div className="rounded-2xl border border-[#E5DED4] bg-white p-6 shadow-[0_8px_30px_rgba(23,20,17,0.04)]">
+        <div className="group relative overflow-hidden rounded-[22px] border border-[#E9DDCB] bg-[#FFFCF8] p-6 shadow-[0_8px_26px_rgba(80,62,38,0.04)] transition-all duration-300 hover:-translate-y-1 hover:border-[#D8BD91] hover:shadow-[0_14px_32px_rgba(80,62,38,0.08)]">
+          <div className="pointer-events-none absolute -right-1 -top-1 h-24 w-24 rounded-bl-[90px] bg-[#F8EAEA]" />
 
           <div className="flex items-start justify-between">
 
             <div>
-              <p className="text-sm font-medium text-[#716B64]">
+              <p className="text-sm font-semibold text-[#786B59]">
                 Inactive Restaurants
               </p>
 
-              <h2 className="mt-3 text-3xl font-bold text-[#171411]">
+              <h2 className="mt-3 text-3xl font-bold tracking-tight text-[#26352D]">
                 {
                   ownerRestaurants.filter(
                     (restaurant) =>
@@ -243,15 +265,16 @@ return (
               </h2>
             </div>
 
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#FBEAEA]">
-              <span className="h-2.5 w-2.5 rounded-full bg-[#C85C5C]" />
-            </div>
+<div className="flex h-11 w-11 items-center justify-center rounded-xl border border-[#EED9D5] bg-[#F8ECE9]">
+  <span className="h-2.5 w-2.5 rounded-full bg-[#C85C5C]" />
+</div>
 
           </div>
 
-          <p className="mt-4 text-xs text-[#9A9289]">
+          <p className="mt-4 text-xs leading-5 text-[#8F806D]">
             Currently unavailable
           </p>
+          <div className="mt-5 h-1 w-full rounded-full bg-[#D74747]" />
 
         </div>
 
@@ -262,19 +285,19 @@ return (
       <div>
 
         {/* SECTION HEADER */}
-        <div className="mb-5 flex items-end justify-between">
+        <div className="mb-5 flex items-end justify-between gap-4">
 
           <div>
-            <h2 className="text-xl font-bold text-[#171411]">
+         <h2 className="border-l-4 border-[#D5A454] pl-3 text-xl font-bold tracking-tight text-[#17231E]">
               Your Restaurants
             </h2>
 
-            <p className="mt-1 text-sm text-[#716B64]">
+        <p className="mt-1 text-sm leading-6 text-[#827C72]">
               Restaurants and branches assigned to your account.
             </p>
           </div>
 
-          <span className="hidden text-sm text-[#716B64] sm:block">
+         <span className="hidden rounded-full border border-[#E8DCCB] bg-[#FBF7F0] px-3 py-1.5 text-xs font-semibold text-[#806F59] sm:block">
             {ownerRestaurants.length}{" "}
             {ownerRestaurants.length === 1
               ? "Restaurant"
@@ -287,17 +310,17 @@ return (
         {/* ================= NO RESTAURANTS ================= */}
         {ownerRestaurants.length === 0 ? (
 
-          <div className="rounded-2xl border border-dashed border-[#D8CFC4] bg-white px-6 py-16 text-center">
+        <div className="rounded-[22px] border border-dashed border-[#DCCDB8] bg-[#FBF7F0] px-6 py-16 text-center shadow-[0_8px_26px_rgba(80,62,38,0.03)]">
 
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#F5E8D4] text-xl font-bold text-[#B88945]">
+           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-[#E8E0D5] bg-[#F4F0E9] text-xl font-bold text-[#B38E59] shadow-sm">
               R
             </div>
 
-            <h3 className="mt-5 text-lg font-bold text-[#171411]">
+          <h3 className="mt-5 font-serif text-xl font-semibold text-[#252721]">
               No Restaurants Found
             </h3>
 
-            <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[#716B64]">
+          <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[#827C72]">
               No restaurant or branch has been assigned to your
               account yet.
             </p>
@@ -307,7 +330,7 @@ return (
               onClick={() => {
                 window.location.href = "/owner/restaurants";
               }}
-              className="mt-6 rounded-xl bg-[#D5A960] px-5 py-2.5 text-sm font-semibold text-[#171411] transition hover:bg-[#C99A52]"
+             className="mt-6 rounded-xl bg-[#D5A454] px-5 py-3 text-sm font-semibold text-[#2D281F] shadow-[0_4px_12px_rgba(140,99,39,0.12)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#C89543] hover:shadow-lg"
             >
               View Restaurants
             </button>
@@ -317,14 +340,19 @@ return (
         ) : (
 
           /* ================= RESTAURANT CARDS ================= */
-          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+         
+<div className="grid w-full min-w-0 grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+
 
             {ownerRestaurants.map((restaurant) => (
 
               <div
                 key={restaurant.id}
-                className="group rounded-2xl border border-[#E5DED4] bg-white p-6 shadow-[0_8px_30px_rgba(23,20,17,0.04)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_15px_40px_rgba(23,20,17,0.08)]"
+               
+className="group relative w-full min-w-0 overflow-hidden rounded-[22px] border border-[#E9DDCB] bg-[#FFFCF8] p-4 shadow-[0_8px_26px_rgba(80,62,38,0.045)] transition-all duration-300 hover:-translate-y-1 hover:border-[#D8BD91] hover:shadow-[0_16px_34px_rgba(80,62,38,0.085)] sm:p-6"
+
               >
+                <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#C9974E] via-[#E4C795] to-[#C9974E]" />
 
                 {/* TOP */}
                 <div className="flex items-start justify-between gap-4">
@@ -332,7 +360,7 @@ return (
                   <div className="flex min-w-0 items-center gap-3">
 
                     {/* RESTAURANT AVATAR */}
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#F5E8D4] text-base font-bold text-[#B88945]">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#003D32] text-base font-bold text-[#E2B45F] shadow-sm">
                       {restaurant.name
                         ?.charAt(0)
                         ?.toUpperCase() || "R"}
@@ -340,11 +368,11 @@ return (
 
                     <div className="min-w-0">
 
-                      <h3 className="truncate text-base font-bold text-[#171411]">
+                      <h3 className="truncate text-lg font-semibold tracking-tight text-[#252721]">
                         {restaurant.name}
                       </h3>
 
-                      <p className="mt-1 truncate text-xs text-[#9A9289]">
+                      <p className="mt-1 truncate text-xs font-medium tracking-wide text-[#958777]">
                         Restaurant ID: {restaurant.id}
                       </p>
 
@@ -355,18 +383,17 @@ return (
 
                   {/* STATUS */}
                   <span
-                    className={`inline-flex shrink-0 items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold ${
-                      restaurant.status === "Active"
-                        ? "bg-[#E8F2EB] text-[#3F7D5A]"
-                        : "bg-[#FBEAEA] text-[#C85C5C]"
-                    }`}
+className={`inline-flex shrink-0 items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold ${
+  restaurant.status === "Active"
+    ? "border-[#D7E7DA] bg-[#EDF5EE] text-[#3F7652]"
+    : "border-[#F0DADA] bg-[#FCF0EF] text-[#B85B55]"
+}`}
                   >
                     <span
                       className={`h-1.5 w-1.5 rounded-full ${
-                        restaurant.status === "Active"
-                          ? "bg-[#3F7D5A]"
-                          : "bg-[#C85C5C]"
-                      }`}
+                      restaurant.status === "Active"
+                      ? "bg-[#3F7652]"
+                      : "bg-[#B85B55]"}`}
                     />
 
                     {restaurant.status}
@@ -376,27 +403,27 @@ return (
 
 
                 {/* LOCATION */}
-                <div className="mt-6 rounded-xl bg-[#FCFAF7] px-4 py-3">
+                <div className="mt-5 rounded-2xl border border-[#EFE5D9] bg-[#F7F3ED] px-4 py-3.5">
 
-                  <p className="text-xs font-medium uppercase tracking-wider text-[#9A9289]">
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#A87937]">
                     Location
                   </p>
 
-                  <p className="mt-1 text-sm font-medium text-[#4F4942]">
-                    {restaurant.location ||
-                      [restaurant.city, restaurant.state]
-                        .filter(Boolean)
-                        .join(", ") ||
-                      "Location not available"}
-                  </p>
+<p className="mt-1 text-sm font-medium leading-6 text-[#17231E]">
+  {restaurant.location ||
+    [restaurant.city, restaurant.state]
+      .filter(Boolean)
+      .join(", ") ||
+    "Location not available"}
+</p>
 
                 </div>
 
 
                 {/* FOOTER */}
-                <div className="mt-5 flex items-center justify-between border-t border-[#EEE8DF] pt-5">
+              <div className="mt-5 flex items-center justify-between border-t border-[#EEE4D8] pt-4">
 
-                  <span className="text-xs text-[#9A9289]">
+               <span className="text-xs font-medium tracking-wide text-[#958777]">
                     Manage restaurant
                   </span>
 
@@ -406,7 +433,7 @@ return (
                       window.location.href =
                         `/owner/restaurants/${restaurant.id}`;
                     }}
-                    className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold text-[#B88945] transition hover:bg-[#F5E8D4] hover:text-[#171411]"
+                 className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold text-[#B38E59] transition-all duration-200 hover:bg-[#F4F0E9] hover:text-[#102D26]"
                   >
                     View Details
                     <span className="text-base transition-transform group-hover:translate-x-0.5">
