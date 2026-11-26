@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   UtensilsCrossed,
@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 
 
-export default function PublicMenuPage() {
+function PublicMenuContent() {
   const searchParams = useSearchParams();
   const restaurantId = searchParams.get("restaurantId");
   const tableId = searchParams.get("tableId");
@@ -1455,5 +1455,24 @@ setProfileModalView("orders");
         </p>
       </footer>
     </main>
+  );
+}
+
+export default function PublicMenuPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-[#F7F5EF]">
+          <div className="text-center">
+            <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-[#DCE5DE] border-t-[#1B3A2F]" />
+            <p className="mt-4 text-sm font-medium text-[#66736B]">
+              Preparing your menu...
+            </p>
+          </div>
+        </div>
+      }
+    >
+      <PublicMenuContent />
+    </Suspense>
   );
 }
